@@ -1043,7 +1043,37 @@ namespace BriefFiniteElementNet.Elements
         
         public Displacement GetExactInternalDisplacementAt(double xi, LoadCase loadCase)
         {
-            throw new NotImplementedException();
+            var N = new double[2];
+    var B = new double[2, 2];
+    var D = Material.GetStressStrainMatrix();
+    var L = Length;
+
+    // Calculate the shape functions and their derivatives
+    N[0] = 1 - xi / L;
+    N[1] = xi / L;
+    B[0, 0] = -1 / L;
+    B[0, 1] = 1 / L;
+    B[1, 0] = -1 / L;
+    B[1, 1] = 1 / L;
+
+    // Calculate the element stiffness matrix and nodal load vector for the load case
+    var Ke = B.Transpose() * D * B * A;
+    var Fe = Load.GetElementNodalLoadVector(this, loadCase);
+
+    // Calculate the element nodal displacements
+    var u = new Displacement(2);
+    for (int i = 0; i < 2; i++)
+    {
+        u += Nodes[i].GetNodalDisplacement(loadCase) * N[i];
+    }
+
+    // Calculate the exact displacement at the internal point
+    var x = L * xi;
+    var epsilon = B * u;
+    var sigma = D * epsilon;
+    var u_exact = u + (x / L) * (Fe / EA - Ke * u - sigma * A);
+
+    return new Displacement(u_exact);
         }
 
         
@@ -1053,10 +1083,10 @@ namespace BriefFiniteElementNet.Elements
         }
 
         
-        public Displacement GetExactInternalDisplacementAt(double xi)
+        /*public Displacement GetExactInternalDisplacementAt(double xi)
         {
             throw new NotImplementedException();
-        }
+        }*/
         #endregion
 
         /// <summary>
